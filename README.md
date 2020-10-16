@@ -7,5 +7,6 @@ Require full ROS installation. The installation assumes you have Ubuntu 16.04 LT
 5. sudo apt-get install ros-kinetic-ros-control* ros-kinetic-gazebo-ros-control
 
 ## To run:
-roslaunch panda_table_description panda_gazebo_effort.launch <br/>
-rosrun grasp_detection pick_place_node (from another terminal)
+roslaunch panda_table_description panda_gazebo_asus.launch <br/>
+roslaunch grasp_detection grasp_detection.launch <br/>
+rosrun grasp_detection execute_grasp_node 
