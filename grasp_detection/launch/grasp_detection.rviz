@@ -6,7 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Image1
+        - /PointCloud21
+        - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 449
   - Class: rviz/Selection
@@ -74,8 +75,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 1.68372822
-        Min Value: -0.682491779
+        Max Value: 1.20000005
+        Min Value: -0.00984692574
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -93,7 +94,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 2
+      Size (Pixels): 1
       Size (m): 0.00999999978
       Style: Points
       Topic: /grasp_detection/depth/mypoints
@@ -127,7 +128,7 @@ Visualization Manager:
   Global Options:
     Background Color: 45; 45; 45
     Default Light: true
-    Fixed Frame: camera_link
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -148,25 +149,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.47183943
+      Distance: 1.64325857
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.642778873
-        Y: 0.355872363
-        Z: 1.06444609
+        X: 0.516199946
+        Y: -0.11459896
+        Z: 0.964740753
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.125203758
+      Pitch: 0.490202934
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.67391443
+      Yaw: 5.85891056
     Saved: ~
 Window Geometry:
   Displays:

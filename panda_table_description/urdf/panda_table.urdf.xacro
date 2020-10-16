@@ -58,13 +58,13 @@
   <link name="table">
     <visual>
       <geometry>
-	<box size="1.0 1.11 0.7" />
+	<box size="1.0 1.35 0.7" />
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0.35" />
     </visual>
     <collision>
       <geometry>
-	<box size="1.0 1.11 0.7" />
+	<box size="1.0 1.35 0.7" />
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0.35" />
     </collision>
@@ -168,37 +168,37 @@
   </joint>
   
   <joint name="table_joint" type="fixed">
-    <parent link="table" />
+    <parent link="world" />
     <child link = "mount_flange_link" />
-    <origin xyz="0.0 0.305 0.7" rpy="0.0 0.0 1.5707" />
+    <origin xyz="0.0 0.45 0.7" rpy="0.0 0.0 1.5707" />
   </joint>
 
   <joint name="table_column1" type="fixed">
     <parent link="table" />
     <child link = "column1" />
-    <origin xyz="0.45 -0.505 0.7" rpy="0.0 0.0 0.0" />
+    <origin xyz="0.45 -0.605 0.7" rpy="0.0 0.0 0.0" />
   </joint>
   <joint name="table_column2" type="fixed">
     <parent link="table" />
     <child link = "column2" />
-    <origin xyz="-0.45 -0.505 0.7" rpy="0.0 0.0 0.0" />
+    <origin xyz="-0.45 -0.605 0.7" rpy="0.0 0.0 0.0" />
   </joint>
 
   <joint name="table_011_banana" type="fixed">
     <parent link="table" />
     <child link = "011_banana" />
-    <origin xyz="0.0 -0.265 0.45" rpy="0.0 0.0 0.0" />
+    <origin xyz="0.0 0.0 0.45" rpy="0.0 0.0 0.0" />
   </joint>
   <joint name="table_065-h_cups" type="fixed">
     <parent link="table" />
     <child link = "065-h_cups" />
-    <origin xyz="0.10 -0.205 0.45" rpy="0.0 0.0 0.0" />
+    <origin xyz="0.10 0.0 0.45" rpy="0.0 0.0 0.0" />
   </joint>
 
   <joint name="world_camera_joint" type="fixed">
-    <parent link="world" />
+    <parent link="table" />
     <child link = "camera_link" />
-    <origin xyz="-0.045 -0.85 1.31" rpy="0.0 0.745 1.56" />
+    <origin xyz="0.0 -0.605 1.2" rpy="0.0 ${pi/3.5} ${pi/2}" />
   </joint>
 
   <link name="asus_rgb_optical_frame"/>

@@ -7,7 +7,7 @@
     <arg name="gui" default="false"/>
     <arg name="headless" default="false"/>
     <arg name="debug" default="false"/>
-    <arg name="start_moveit" default="false"/>
+    <arg name="start_moveit" default="true"/>
     <arg name="load_gripper" default="true"/>
     
     <!-- load robot description from xacro file -->
@@ -34,7 +34,7 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
 
     <!-- enabled only if we want to run moveit in simulation -->
-    <!-- <include file="$(find panda_moveit_config)/launch/planning_context.launch" if="$(arg start_moveit)">
+    <include file="$(find panda_moveit_config)/launch/planning_context.launch" if="$(arg start_moveit)">
         <arg name="load_robot_description" value="false"/>
     </include>
     <include file="$(find panda_moveit_config)/launch/move_group.launch" if="$(arg start_moveit)">
@@ -42,10 +42,9 @@
      <arg name="fake_execution" value="false"/>
    </include>
     <include file="$(find panda_moveit_config)/launch/moveit_rviz.launch" if="$(arg start_moveit)">
-     <arg name="config" value="true"/>
    </include>
     <node name="joint_state_desired_publisher" pkg="topic_tools" type="relay" args="joint_states joint_states_desired" if="$(arg start_moveit)"/>
- -->
+
     
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find panda_table_description)/launch/sim.rviz" unless="$(arg start_moveit)" />
 

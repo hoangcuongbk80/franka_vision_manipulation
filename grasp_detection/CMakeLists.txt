@@ -35,6 +35,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   std_srvs
   visualization_msgs
+  tf_conversions
 
   interactive_markers
     moveit_core
@@ -140,7 +141,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
    INCLUDE_DIRS include
-   CATKIN_DEPENDS cv_bridge pcl_conversions pcl_ros roscpp sensor_msgs std_msgs std_srvs visualization_msgs
+   CATKIN_DEPENDS cv_bridge pcl_conversions pcl_ros roscpp sensor_msgs std_msgs std_srvs visualization_msgs tf_conversions
     moveit_core
     moveit_visual_tools
     moveit_ros_planning_interface
@@ -183,7 +184,7 @@ include_directories(
 # add_executable(${PROJECT_NAME}_node src/grasp_detection_node.cpp)
 
 add_executable(grasp_detection_node src/grasp_detection_node.cpp)
-add_executable(pick_place_node src/pick_place_node.cpp)
+add_executable(test_camera_node src/test_camera_node.cpp)
 
 
 ## Rename C++ executable without prefix
@@ -202,7 +203,7 @@ add_executable(pick_place_node src/pick_place_node.cpp)
 # )
 
 target_link_libraries(grasp_detection_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
-target_link_libraries(pick_place_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(test_camera_node ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 
 #############
