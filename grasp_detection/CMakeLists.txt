@@ -140,7 +140,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   INCLUDE_DIRS include
+   INCLUDE_DIRS
    CATKIN_DEPENDS cv_bridge pcl_conversions pcl_ros roscpp sensor_msgs std_msgs std_srvs visualization_msgs tf_conversions
     moveit_core
     moveit_visual_tools

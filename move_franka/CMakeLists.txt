@@ -63,7 +63,3 @@ add_executable(test_robot_node src/test_robot_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${Boost_SYSTEM_LIBRARIES})
 target_link_libraries(execute_grasp_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${Boost_SYSTEM_LIBRARIES})
 target_link_libraries(test_robot_node ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${Boost_SYSTEM_LIBRARIES})
-
-
-install(TARGETS ${PROJECT_NAME}_node DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
