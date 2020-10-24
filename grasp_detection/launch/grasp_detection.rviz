@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /PointCloud21
         - /MarkerArray1
       Splitter Ratio: 0.5
     Tree Height: 449
@@ -29,7 +28,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -104,11 +103,11 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /OBBs
+      Marker Topic: /grasp_detector/myGrasp
       Name: MarkerArray
       Namespaces:
         {}
-      Queue Size: 100
+      Queue Size: 2
       Value: true
     - Class: rviz/TF
       Enabled: false
@@ -149,7 +148,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.64325857
+      Distance: 1.61959565
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -164,10 +163,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.490202934
+      Pitch: 0.685202777
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.85891056
+      Yaw: 5.84391022
     Saved: ~
 Window Geometry:
   Displays:

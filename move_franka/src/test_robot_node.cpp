@@ -142,6 +142,6 @@ int main(int argc, char** argv)
     mf.move_group->setMaxAccelerationScalingFactor(FACTOR);
     //mf.resetPanda();
     mf.move_back();
-    mf.move_pick();
+    //mf.move_pick();
     return 0;
 }

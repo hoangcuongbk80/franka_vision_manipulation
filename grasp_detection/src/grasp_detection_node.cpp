@@ -1,11 +1,17 @@
+#include <iostream> 
+#include <cstdlib> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <cmath>
+
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/PointCloud2.h>
-
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
-
 #include <tf_conversions/tf_eigen.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
@@ -17,9 +23,11 @@
 #include <pcl/conversions.h>
 #include <pcl/common/transforms.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/common/common.h>
 
 using namespace cv;
 using namespace std;
+using namespace Eigen;
 
 class readrgbdNode
 {
@@ -32,24 +40,34 @@ class readrgbdNode
     void rgbCallback(const sensor_msgs::Image::ConstPtr& msg);
     void cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg);
     void cloudPublish();
-
     void depthToClould(cv::Mat &depth_img);
+    void gripper_init(double open_dst);
+    bool setup_marker_withEuler();
+    void read_grasp(std::string grasp_path);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr gripper;
+    visualization_msgs::MarkerArray multiMarker;
 
     bool image_save;
     std::string depth_topsub, rgb_topsub, cloud_topsub, cloud_toppub;
     std::string saved_rgb_dir, saved_depth_dir, saved_points_dir;
-    std::string optical_frame_id;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr scene_cloud;
+    std::string optical_frame_id, grasp_frame_id;
+    std::string grasp_path;
+    vector<vector<float>> grasps;
+
     double fx, fy, cx, cy, depth_factor;
     double table_height;
+    float dst_gripper2object;
+    float quality_thresh = 0.0;
 
     tf::TransformListener tf_listener;
 
   private:
-   ros::NodeHandle nh_, nh_rgb, nh_depth, nh_cloud;
+   ros::NodeHandle nh_, nh_rgb, nh_depth, nh_cloud, nh_grasp;
    ros::Subscriber depth_sub, rgb_sub, cloud_sub;
-   ros::Publisher cloud_pub;
+   ros::Publisher cloud_pub, grasp_pub;
 };
 
 readrgbdNode::readrgbdNode()
@@ -58,6 +76,7 @@ readrgbdNode::readrgbdNode()
   nh_rgb = ros::NodeHandle("~");
   nh_depth = ros::NodeHandle("~");
   nh_cloud = ros::NodeHandle("~");
+  nh_grasp = ros::NodeHandle("~");
 
   nh_depth.getParam("depth_topsub", depth_topsub);
   nh_rgb.getParam("rgb_topsub", rgb_topsub);
@@ -71,13 +90,17 @@ readrgbdNode::readrgbdNode()
 
   nh_.getParam("table_height", table_height);
   nh_.getParam("optical_frame_id", optical_frame_id);
-
+  nh_.getParam("grasp_frame_id", grasp_frame_id);
 
   nh_.getParam("fx", fx);
   nh_.getParam("fy", fy);
   nh_.getParam("cx", cx);
   nh_.getParam("cy", cy);
   nh_.getParam("depth_factor", depth_factor);
+
+  nh_.getParam("grasp_path", grasp_path);
+  nh_.getParam("quality_thresh", quality_thresh);
+  nh_.getParam("dst_gripper2object", dst_gripper2object);
 
   std::cerr << "depth topics sub: " << "\n" << depth_topsub << "\n";
   std::cerr << "rgb topics sub: " << "\n" << rgb_topsub << "\n";
@@ -88,7 +111,7 @@ readrgbdNode::readrgbdNode()
 
   cloud_.reset(new pcl::PointCloud<pcl::PointXYZ>);
   scene_cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
-
+  gripper.reset(new pcl::PointCloud<pcl::PointXYZ>);
 }
 
 readrgbdNode::~readrgbdNode()
@@ -105,6 +128,165 @@ void readrgbdNode::subcribeTopics()
 void readrgbdNode::advertiseTopics()
 {
   cloud_pub = nh_.advertise<sensor_msgs::PointCloud2> (cloud_toppub, 1);
+  grasp_pub = nh_grasp.advertise<visualization_msgs::MarkerArray>( "myGrasp", 1);
+}
+
+void readrgbdNode::gripper_init(double open_dst)
+{
+/*       
+       p4 -         - p5             Z -     - Y
+          -         -                  -   -
+          -   p1    -                  - -
+          - - - - - -                  - - - - - X
+          p2   -    p3
+               -
+               -p0
+
+ */
+  if(!gripper->empty()) gripper.reset(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointXYZ p0;  
+  p0.x = 0; p0.y = 0; p0.z = -0.1;
+  gripper->push_back(p0);
+  
+  pcl::PointXYZ p1;  
+  p1.x = 0; p1.y = 0; p1.z = 0;
+  gripper->push_back(p1);
+
+  pcl::PointXYZ p2;  
+  p2.x = -open_dst/2; p2.y = 0; p2.z = 0;
+  gripper->push_back(p2);
+
+  pcl::PointXYZ p3;  
+  p3.x = open_dst/2; p3.y = 0; p3.z = 0;
+  gripper->push_back(p3);
+
+  pcl::PointXYZ p4;  
+  p4.x = -open_dst/2; p4.y = 0; p4.z = 0.1;
+  gripper->push_back(p4);
+
+  pcl::PointXYZ p5;  
+  p5.x = open_dst/2; p5.y = 0; p5.z = 0.1;
+  gripper->push_back(p5);
+}
+
+bool readrgbdNode::setup_marker_withEuler()
+{
+    if(grasps.empty())
+    {
+      std::cerr << "\n Grasps empty!";
+      return false;
+    }
+
+    for(int i=0; i < grasps.size(); i++)
+    {
+      gripper_init(grasps[i][8]);
+      visualization_msgs::Marker line_list;
+      geometry_msgs::Point p;
+
+      line_list.header.frame_id = grasp_frame_id;
+      line_list.header.stamp = ros::Time::now();
+      line_list.ns = "grasps";
+      line_list.id = i;
+      line_list.type = visualization_msgs::Marker::LINE_LIST;
+      line_list.action = visualization_msgs::Marker::ADD;
+      line_list.pose.position.x = grasps[i][1];
+      line_list.pose.position.y = grasps[i][2];
+      line_list.pose.position.z = grasps[i][3] + table_height +  dst_gripper2object;
+      Matrix3f mat;
+      mat = AngleAxisf(grasps[i][4]*M_PI/180, Vector3f::UnitX())
+          * AngleAxisf(grasps[i][5]*M_PI/180, Vector3f::UnitY())
+          * AngleAxisf(grasps[i][6]*M_PI/180, Vector3f::UnitZ());
+      Quaternionf q(mat);
+      line_list.pose.orientation.x = q.x();
+      line_list.pose.orientation.y = q.y();
+      line_list.pose.orientation.z = q.z();
+      line_list.pose.orientation.w = q.w();
+      line_list.scale.x = 0.002; line_list.scale.y = 0.002; line_list.scale.z = 0.002;
+      line_list.color.r = 0.0f; line_list.color.g = 1.0f; line_list.color.b = 0.0f; line_list.color.a = 1.0;
+      
+      p.x = gripper->points[0].x; p.y = gripper->points[0].y; p.z = gripper->points[0].z;
+      line_list.points.push_back(p);
+
+      p.x = gripper->points[1].x; p.y = gripper->points[1].y; p.z = gripper->points[1].z;
+      line_list.points.push_back(p);
+
+      p.x = gripper->points[2].x; p.y = gripper->points[2].y; p.z = gripper->points[2].z;
+      line_list.points.push_back(p);
+
+      p.x = gripper->points[3].x; p.y = gripper->points[3].y; p.z = gripper->points[3].z;
+      line_list.points.push_back(p);
+
+      p.x = gripper->points[2].x; p.y = gripper->points[2].y; p.z = gripper->points[2].z;
+      line_list.points.push_back(p);
+
+      p.x = gripper->points[4].x; p.y = gripper->points[4].y; p.z = gripper->points[4].z;
+      line_list.points.push_back(p);
+
+      p.x = gripper->points[3].x; p.y = gripper->points[3].y; p.z = gripper->points[3].z;
+      line_list.points.push_back(p);
+
+      p.x = gripper->points[5].x; p.y = gripper->points[5].y; p.z = gripper->points[5].z;
+      line_list.points.push_back(p);
+
+      visualization_msgs::Marker graspName;
+      graspName.header.frame_id = grasp_frame_id;
+      graspName.header.stamp = ros::Time::now();
+      graspName.id = i;
+      graspName.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+      graspName.action = visualization_msgs::Marker::ADD;
+      graspName.pose.position.x = grasps[i][1];
+      graspName.pose.position.y = grasps[i][2];
+      graspName.pose.position.z = grasps[i][3] + table_height + dst_gripper2object + 0.105;
+      graspName.pose.orientation.x = q.x();
+      graspName.pose.orientation.y = q.y();
+      graspName.pose.orientation.z = q.z();
+      graspName.pose.orientation.w = q.w();
+      graspName.text = std::to_string(i+2);
+      graspName.scale.x = 0.005; graspName.scale.y = 0.005; graspName.scale.z = 0.005;
+      graspName.color.r = 1.0f; graspName.color.g = 0.0f; graspName.color.b = 0.0f; graspName.color.a = 1.0;
+
+      graspName.lifetime = ros::Duration();
+      if(grasps[i][7] > quality_thresh)
+      {
+          multiMarker.markers.push_back(graspName);
+          line_list.lifetime = ros::Duration();
+          multiMarker.markers.push_back(line_list);
+      }
+        
+    }
+    return true;
+}
+
+void readrgbdNode::read_grasp(std::string grasp_path)
+{
+  ifstream grasp_file (grasp_path);
+  if (grasp_file.is_open())            
+    {
+      string line;
+      getline (grasp_file, line);
+       while(!grasp_file.eof())
+      {
+        vector<string> st;
+        vector<float> grasp;
+        getline (grasp_file, line);
+        boost::trim(line);
+		    boost::split(st, line, boost::is_any_of("\t\r "), boost::token_compress_on);
+        if(st.size() < 6) continue;
+        for(int i=0; i < st.size(); i++)
+          {
+            grasp.push_back(std::stof(st[i]));
+          }
+        grasps.push_back(grasp);
+        
+        //trans(0) = std::stof(st[4]); trans(1) = std::stof(st[5]); trans(2) = std::stof(st[6]); //translaton
+        //rot_quaternion[0] = std::stof(st[0]); rot_quaternion[1] = std::stof(st[1]); //rotation
+        //rot_quaternion[2] = std::stof(st[2]); rot_quaternion[3] = std::stof(st[3]); //rotation
+      }
+    }
+  else 
+    {
+      std::cerr << "Unable to open file";
+    }
 }
 
 void readrgbdNode::depthToClould(cv::Mat &depth_img)
@@ -133,7 +315,7 @@ void readrgbdNode::depthToClould(cv::Mat &depth_img)
   scene_cloud->header.frame_id = optical_frame_id;
   pcl::toPCLPointCloud2(*scene_cloud, cloud_filtered);
   pcl_conversions::fromPCL(cloud_filtered, output);
-  cloud_pub.publish(output);
+  //cloud_pub.publish(output);
 
   //convert to world
   tf::StampedTransform transform;
@@ -179,6 +361,9 @@ void readrgbdNode::depthCallback (const sensor_msgs::Image::ConstPtr& msg)
   //cv::waitKey(3);
   if(image_save) cv::imwrite( saved_depth_dir, depth_img );
   depthToClould(depth_img);
+  setup_marker_withEuler();
+  read_grasp(grasp_path);
+  grasp_pub.publish(multiMarker);
 }
 
 void readrgbdNode::rgbCallback (const sensor_msgs::Image::ConstPtr& msg)

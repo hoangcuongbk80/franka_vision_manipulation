@@ -4,13 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
         - /TF1/Frames1
         - /TF1/Tree1
         - /MotionPlanning1/Planning Request1
-        - /Image1
-        - /PointCloud21
       Splitter Ratio: 0.497854084
     Tree Height: 450
   - Class: rviz/Selection
@@ -74,7 +70,22 @@ Visualization Manager:
       Collision Enabled: false
       Enabled: true
       Links:
+        008_pudding_box:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         011_banana:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        024_bowl:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        044_flat_screwdriver:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -304,13 +315,21 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 1
       Size (m): 0.00999999978
       Style: Points
       Topic: /camera/depth/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /grasp_detector/myGrasp
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 10
       Value: true
   Enabled: true
   Global Options:
@@ -337,7 +356,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.35494673
+      Distance: 2.48060322
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -352,10 +371,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.920398295
+      Pitch: 0.645398498
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.0853955224
+      Yaw: 5.74857903
     Saved: ~
 Window Geometry:
   Displays:

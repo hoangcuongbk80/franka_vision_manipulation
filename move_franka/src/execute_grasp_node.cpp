@@ -30,9 +30,9 @@ class move_franka_node
 
     public:
         void resetPanda();
-        void move_pick();
         void move_back();
         void F_extCallback(const geometry_msgs::WrenchStamped &msg);
+        void move_pick(double x, double y, double z, double rz);
 
         moveit::planning_interface::MoveGroupInterface *move_group;
         const moveit::core::JointModelGroup* joint_model_group;
@@ -110,14 +110,14 @@ void move_franka_node::move_back()
     move_group->move();
 }
 
-void move_franka_node::move_pick()
+void move_franka_node::move_pick(double x, double y, double z, double rz)
 {
     geometry_msgs::Pose target_pose;
-    target_pose.position.x = 0.06;
-    target_pose.position.y = 0.01;
-    target_pose.position.z = 0.95;
+    target_pose.position.x = x;
+    target_pose.position.y = y;
+    target_pose.position.z = z;
     tf2::Quaternion q;
-    q.setRPY(M_PI, 0, -M_PI/2);
+    q.setRPY(M_PI, 0, M_PI*rz/180);
     target_pose.orientation = tf2::toMsg(q);
     move_group->setPoseTarget(target_pose, "panda_hand");
 
@@ -136,12 +136,24 @@ int main(int argc, char** argv)
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
+    ros::NodeHandle nh_, grasp_n;
+
+    std::string grasp_path;
+    double x_pick, y_pick, z_pick, rz_pick;
+  
+    nh_ = ros::NodeHandle("~");
+    nh_.getParam("x_pick", x_pick);
+    nh_.getParam("y_pick", y_pick);
+    nh_.getParam("z_pick", z_pick);
+    nh_.getParam("rz_pick", rz_pick);
+
     move_franka_node mf;
  
     mf.move_group->setMaxVelocityScalingFactor(FACTOR);
     mf.move_group->setMaxAccelerationScalingFactor(FACTOR);
     //mf.resetPanda();
-    mf.move_back();
-    mf.move_pick();
+    //mf.move_back();
+    mf.move_pick(x_pick, y_pick, z_pick, rz_pick);
+    //mf.move_back();
     return 0;
 }
