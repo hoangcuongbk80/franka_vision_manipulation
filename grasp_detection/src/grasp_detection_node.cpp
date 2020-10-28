@@ -315,7 +315,7 @@ void readrgbdNode::depthToClould(cv::Mat &depth_img)
   scene_cloud->header.frame_id = optical_frame_id;
   pcl::toPCLPointCloud2(*scene_cloud, cloud_filtered);
   pcl_conversions::fromPCL(cloud_filtered, output);
-  //cloud_pub.publish(output);
+  cloud_pub.publish(output);
 
   //convert to world
   tf::StampedTransform transform;
@@ -336,8 +336,8 @@ void readrgbdNode::depthToClould(cv::Mat &depth_img)
   Eigen::Affine3f transform_pc = Eigen::Affine3f::Identity();
   transform_pc.translation() << 0, 0, -table_height;
   pcl::transformPointCloud (*scene_cloud, *scene_cloud, transform_pc);
-  pcl::io::savePLYFileBinary(saved_points_dir, *scene_cloud);
-  std::cerr << "save: " << saved_points_dir << "\n";
+  //pcl::io::savePLYFileBinary(saved_points_dir, *scene_cloud);
+  //std::cerr << "save: " << saved_points_dir << "\n";
 }
 
 void readrgbdNode::depthCallback (const sensor_msgs::Image::ConstPtr& msg)
@@ -356,7 +356,7 @@ void readrgbdNode::depthCallback (const sensor_msgs::Image::ConstPtr& msg)
 
   cv::Mat depth_img;
   depth_img = bridge->image.clone();
-  depth_img.convertTo(depth_img, CV_16UC1, 1000.0);
+  depth_img.convertTo(depth_img, CV_16UC1, 1000.0); //Asus
   //cv::imshow("depth", depth_img);
   //cv::waitKey(3);
   if(image_save) cv::imwrite( saved_depth_dir, depth_img );
@@ -393,6 +393,29 @@ void readrgbdNode::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_m
   cloud_.reset(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::fromPCLPointCloud2( *cloud2, *cloud_);
   // do something
+  scene_cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::copyPointCloud(*cloud_, *scene_cloud);
+  //convert to world
+  tf::StampedTransform transform;
+  Eigen::Affine3d Tcam_offset;
+  try
+  {
+      tf_listener.lookupTransform(optical_frame_id, "world", ros::Time(0), transform);
+      tf::poseTFToEigen(transform, Tcam_offset);
+      Eigen::Matrix4d m = Tcam_offset.matrix().inverse();
+      pcl::transformPointCloud (*scene_cloud, *scene_cloud, m);
+  }
+  catch (tf::TransformException ex)
+  {
+      ROS_ERROR("%s",ex.what());
+  }
+
+  // Save pointcloud for votegrasp
+  Eigen::Affine3f transform_pc = Eigen::Affine3f::Identity();
+  transform_pc.translation() << 0, 0, -table_height;
+  pcl::transformPointCloud (*scene_cloud, *scene_cloud, transform_pc);
+  pcl::io::savePLYFileBinary(saved_points_dir, *scene_cloud);
+  std::cerr << "save: " << saved_points_dir << "\n";
 }
 
 int main(int argc, char** argv)
