@@ -18,6 +18,15 @@ Require full ROS installation. The installation assumes you have Ubuntu 16.04 LT
    ```bash
    $ rosrun grasp_detection execute_grasp_node
    ```
+   ```bash
+   To test this node, run:
+   $ rostopic pub /votegrasp/grasp std_msgs/Float64MultiArray """
+    layout:
+        dim: []                                
+    data: [-0.29, -0.25, 1.3, 180, 0, 90, 0.06]
+    """
+   ```
+   and run (for simulation):
 ## Calibration:
 https://github.com/jhu-lcsr/aruco_hand_eye <br/>
 https://blog.csdn.net/qq_39367282/article/details/89515338?fbclid=IwAR0X1oSc6uy8wauFOOVeNuvXCrIlqtXAn5vyoJm6peQoXf0zKQ3FVYm6eX0
