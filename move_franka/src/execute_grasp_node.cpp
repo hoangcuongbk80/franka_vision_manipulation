@@ -10,6 +10,10 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <math.h>
 #include <ros/ros.h>
+#include "std_msgs/MultiArrayLayout.h"
+#include "std_msgs/MultiArrayDimension.h"
+#include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/Float64.h"
 #include <std_msgs/String.h>
 #include <std_msgs/Bool.h>
 #include <tf2/convert.h>
@@ -25,14 +29,23 @@
 class move_franka_node
 {
     private:
-        ros::NodeHandle n, nh_;
+        ros::NodeHandle n, nh_grasp, nh_wid;
+        ros::Subscriber grasp_sub;
+        ros::Publisher wid_pub;
         ros::Subscriber F_ext;
 
     public:
-        void resetPanda();
+        void subcribeTopics();
+        void advertiseTopics();
+        void graspCallback(const std_msgs::Float64MultiArray::ConstPtr& array);
+
+        void panda_state();
         void move_back();
         void F_extCallback(const geometry_msgs::WrenchStamped &msg);
-        void move_pick(double x, double y, double z, double rz);
+        void move_pick(std::vector<double> eef_pose);
+
+        std::string grasp_topsub, wid_toppub;
+
 
         moveit::planning_interface::MoveGroupInterface *move_group;
         const moveit::core::JointModelGroup* joint_model_group;
@@ -59,7 +72,19 @@ void move_franka_node::F_extCallback(const geometry_msgs::WrenchStamped& msg){
     } 
 }
 
-void move_franka_node::resetPanda()
+void move_franka_node::subcribeTopics()
+{
+  grasp_topsub = "/votegrasp/grasp";
+  grasp_sub = nh_grasp.subscribe (grasp_topsub, 1, &move_franka_node::graspCallback, this);
+}
+
+void move_franka_node::advertiseTopics()
+{
+  wid_toppub = "/votegrasp/width";
+  wid_pub = nh_wid.advertise<std_msgs::Float64> (wid_toppub, 1);
+}
+
+void move_franka_node::panda_state()
 {
     moveit::core::RobotStatePtr current_state = move_group->getCurrentState();
     std::vector<double> joint_group_positions;
@@ -74,8 +99,10 @@ void move_franka_node::resetPanda()
     /* Print end-effector pose. Remember that this is in the model frame */
     ROS_INFO_STREAM("Translation: \n" << end_effector_state.translation() << "\n");
     ROS_INFO_STREAM("Rotation: \n" << end_effector_state.rotation().eulerAngles(0, 1, 2) << "\n");
+    std::cerr << "Translation: \n" << end_effector_state.translation() << "\n";
+    std::cerr << "Rotation: \n" << end_effector_state.rotation().eulerAngles(0, 1, 2) * 180/M_PI << "\n";
 
-    joint_group_positions[0] = 0.067262;  
+    /* joint_group_positions[0] = 0.067262;  
     joint_group_positions[1] = -0.794014;
     joint_group_positions[2] = -0.049588;
     joint_group_positions[3] = -2.949210;
@@ -87,7 +114,7 @@ void move_franka_node::resetPanda()
     ROS_INFO("Resetting joints angles...");
     move_group->move();
     ROS_INFO("Resetting executed!");
-    ROS_INFO("EndEffector: %s",move_group->getEndEffectorLink().c_str());
+    ROS_INFO("EndEffector: %s",move_group->getEndEffectorLink().c_str()); */
 }
 
 void move_franka_node::move_back()
@@ -110,14 +137,14 @@ void move_franka_node::move_back()
     move_group->move();
 }
 
-void move_franka_node::move_pick(double x, double y, double z, double rz)
+void move_franka_node::move_pick(std::vector<double> eef_pose)
 {
     geometry_msgs::Pose target_pose;
-    target_pose.position.x = x;
-    target_pose.position.y = y;
-    target_pose.position.z = z;
+    target_pose.position.x = eef_pose[0];
+    target_pose.position.y = eef_pose[1];
+    target_pose.position.z = eef_pose[2];
     tf2::Quaternion q;
-    q.setRPY(M_PI, 0, M_PI*rz/180);
+    q.setRPY(eef_pose[3]*M_PI/180, eef_pose[4]*M_PI/180, eef_pose[5]*M_PI/180);
     target_pose.orientation = tf2::toMsg(q);
     move_group->setPoseTarget(target_pose, "panda_hand");
 
@@ -130,30 +157,56 @@ void move_franka_node::move_pick(double x, double y, double z, double rz)
     move_group->move();
 }
 
+void move_franka_node::graspCallback(const std_msgs::Float64MultiArray::ConstPtr& array)
+{
+  std::vector<double> eef_pose;
+  double grasp[7]; // x,y,z,rx,ry,rz,width
+  std::cerr << "Grasp: ";
+  for (size_t i = 0; i < 7; i++)
+  {
+    double x = (double) array->data[i];
+    eef_pose.push_back(x);
+    std::cerr << x << " ";
+  }
+  std::cerr << "\n";
+  move_pick(eef_pose);
+  std_msgs::Float64 wid_msg;
+  wid_msg.data = array->data[6];
+  wid_pub.publish(wid_msg);
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "move_franka");
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
-    ros::NodeHandle nh_, grasp_n;
+    ros::NodeHandle nh_;
 
     std::string grasp_path;
-    double x_pick, y_pick, z_pick, rz_pick;
+
+    std::vector<double> initial_pose;
   
     nh_ = ros::NodeHandle("~");
-    nh_.getParam("x_pick", x_pick);
-    nh_.getParam("y_pick", y_pick);
-    nh_.getParam("z_pick", z_pick);
-    nh_.getParam("rz_pick", rz_pick);
+    nh_.getParam("initial_pose", initial_pose);
 
     move_franka_node mf;
- 
     mf.move_group->setMaxVelocityScalingFactor(FACTOR);
     mf.move_group->setMaxAccelerationScalingFactor(FACTOR);
-    //mf.resetPanda();
+    mf.subcribeTopics();
+    mf.advertiseTopics();
+
+    mf.panda_state();
+
     //mf.move_back();
-    mf.move_pick(x_pick, y_pick, z_pick, rz_pick);
+    //mf.move_pick(initial_pose);
     //mf.move_back();
+    ros::Rate loop_rate(1000);
+
+    while (ros::ok())
+    {
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
     return 0;
 }

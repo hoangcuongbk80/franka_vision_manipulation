@@ -1,12 +1,13 @@
 <?xml version="1.0"?>
 <launch>
-  <node name="execute_grasp" pkg="move_franka" type="execute_grasp_node" cwd="node">
-  
-  <param name="grasp_path" value="$(find ros_votegrasp)/data/0.txt"/>
-  <param name="x_pick" value="0.03"/>
-  <param name="y_pick" value="0.00"/>  
-  <param name="z_pick" value="0.93"/>
-  <param name="rz_pick" value="-90"/>
-  
-  </node>
+  <group ns="panda"> <!-- comment this for simulation -->
+
+    <node name="execute_grasp" pkg="move_franka" type="execute_grasp_node" cwd="node">
+      <!-- <rosparam param="initial_pose"> [0.0, 0.0, 1.0, 180, 0, -90]</rosparam> --> <!-- panda_table -->
+      <rosparam param="initial_pose"> [0.0, 0.0, 1.0, 180, 0, -90]</rosparam> <!-- panda_robotlab -->  
+
+    </node>
+
+  </group> <!-- comment this for simulation -->
+
 </launch>
