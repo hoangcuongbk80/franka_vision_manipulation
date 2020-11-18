@@ -25,6 +25,7 @@
 
 #define FACTOR 0.08
 #define PLANNING_GROUP "panda_arm"
+bool test=false;
 
 class move_franka_node
 {
@@ -43,6 +44,7 @@ class move_franka_node
         void move_back();
         void F_extCallback(const geometry_msgs::WrenchStamped &msg);
         void move_pick(std::vector<double> eef_pose);
+        void move_place(std::vector<double> eef_pose);
 
         std::string grasp_topsub, wid_toppub;
 
@@ -120,20 +122,17 @@ void move_franka_node::panda_state()
 void move_franka_node::move_back()
 {
     geometry_msgs::Pose target_pose;
-    target_pose.position.x = 0.0;
-    target_pose.position.y = 0.1;
-    target_pose.position.z = 1.1;
+    target_pose.position.x = -0.29;
+    target_pose.position.y = -0.25;
+    target_pose.position.z = 1.40;
     tf2::Quaternion q;
-    q.setRPY(M_PI, 0, -M_PI/2);
+    q.setRPY(180*M_PI/180, 0*M_PI/180, 90*M_PI/180);
     target_pose.orientation = tf2::toMsg(q);
     move_group->setPoseTarget(target_pose, "panda_hand");
 
     moveit::planning_interface::MoveGroupInterface::Plan plan;
 
     bool success = (move_group->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-
-    ROS_INFO("Plan move back status: %s", success ? "SUCCESS" : "FAILIURE");
-    ROS_INFO("Execution move back");
     move_group->move();
 }
 
@@ -157,22 +156,58 @@ void move_franka_node::move_pick(std::vector<double> eef_pose)
     move_group->move();
 }
 
+void move_franka_node::move_place(std::vector<double> eef_pose)
+{
+    geometry_msgs::Pose target_pose;
+    target_pose.position.x = eef_pose[0];
+    target_pose.position.y = eef_pose[1];
+    target_pose.position.z = eef_pose[2]+0.1;
+    tf2::Quaternion q;
+    q.setRPY(eef_pose[3]*M_PI/180, eef_pose[4]*M_PI/180, eef_pose[5]*M_PI/180);
+    target_pose.orientation = tf2::toMsg(q);
+    move_group->setPoseTarget(target_pose, "panda_hand");
+
+    moveit::planning_interface::MoveGroupInterface::Plan plan;
+
+    bool success = (move_group->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group->move();
+}
+
 void move_franka_node::graspCallback(const std_msgs::Float64MultiArray::ConstPtr& array)
 {
   std::vector<double> eef_pose;
   double grasp[7]; // x,y,z,rx,ry,rz,width
   std::cerr << "Grasp: ";
-  for (size_t i = 0; i < 7; i++)
+  for (size_t i = 0; i < 6; i++)
   {
     double x = (double) array->data[i];
     eef_pose.push_back(x);
     std::cerr << x << " ";
   }
   std::cerr << "\n";
-  move_pick(eef_pose);
   std_msgs::Float64 wid_msg;
+  //move back
+  if(!test)
+  {
+    wid_msg.data = 0.6;
+    wid_pub.publish(wid_msg);
+    move_back();
+  }
+  
+  // move pick
+  move_pick(eef_pose);
   wid_msg.data = array->data[6];
   wid_pub.publish(wid_msg);
+  sleep(2);
+
+  // move place
+  if(!test)
+  {
+    move_place(eef_pose);  
+    sleep(5);
+    wid_msg.data = 0.6;
+    wid_pub.publish(wid_msg);
+  }
 }
 
 int main(int argc, char** argv)
@@ -189,6 +224,7 @@ int main(int argc, char** argv)
   
     nh_ = ros::NodeHandle("~");
     nh_.getParam("initial_pose", initial_pose);
+    nh_.getParam("test", test);
 
     move_franka_node mf;
     mf.move_group->setMaxVelocityScalingFactor(FACTOR);
@@ -200,7 +236,6 @@ int main(int argc, char** argv)
 
     //mf.move_back();
     //mf.move_pick(initial_pose);
-    //mf.move_back();
     ros::Rate loop_rate(1000);
 
     while (ros::ok())

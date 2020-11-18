@@ -7,6 +7,7 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /MotionPlanning1/Planning Request1
+        - /PointCloud21
       Splitter Ratio: 0.497854084
     Tree Height: 450
   - Class: rviz/Selection
@@ -318,7 +319,7 @@ Visualization Manager:
       Size (Pixels): 1
       Size (m): 0.00999999978
       Style: Points
-      Topic: /camera/depth/points
+      Topic: /asus/depth/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true

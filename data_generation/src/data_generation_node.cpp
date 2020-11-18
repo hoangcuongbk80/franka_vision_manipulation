@@ -337,8 +337,8 @@ void readrgbdNode::depthToClould(cv::Mat &depth_img)
   Eigen::Affine3f transform_pc = Eigen::Affine3f::Identity();
   transform_pc.translation() << 0, 0, -table_height;
   pcl::transformPointCloud (*scene_cloud, *scene_cloud, transform_pc);
-  //pcl::io::savePLYFileBinary(saved_points_dir, *scene_cloud);
-  //std::cerr << "save: " << saved_points_dir << "\n";
+  pcl::io::savePLYFileBinary(saved_points_dir, *scene_cloud);
+  std::cerr << "save: " << saved_points_dir << "\n";
 }
 
 void readrgbdNode::depthCallback (const sensor_msgs::Image::ConstPtr& msg)
@@ -360,8 +360,8 @@ void readrgbdNode::depthCallback (const sensor_msgs::Image::ConstPtr& msg)
   depth_img.convertTo(depth_img, CV_16UC1, 1000.0); //Asus
   //cv::imshow("depth", depth_img);
   //cv::waitKey(3);
-  if(image_save) cv::imwrite( saved_depth_dir, depth_img );
-  depthToClould(depth_img);
+  //if(image_save) cv::imwrite( saved_depth_dir, depth_img );
+  //depthToClould(depth_img);
   setup_marker_withEuler();
   read_grasp(grasp_path);
   grasp_pub.publish(multiMarker);
@@ -415,6 +415,8 @@ void readrgbdNode::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_m
   Eigen::Affine3f transform_pc = Eigen::Affine3f::Identity();
   transform_pc.translation() << 0, 0, -table_height;
   pcl::transformPointCloud (*scene_cloud, *scene_cloud, transform_pc);
+  boost::shared_ptr<std::vector<int>> indices(new std::vector<int>);
+
   pcl::io::savePLYFileBinary(saved_points_dir, *scene_cloud);
   std::cerr << "save: " << saved_points_dir << "\n";
 

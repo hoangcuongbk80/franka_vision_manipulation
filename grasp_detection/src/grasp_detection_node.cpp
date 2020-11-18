@@ -24,6 +24,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/common/common.h>
+#include <pcl/filters/filter.h>
 
 using namespace cv;
 using namespace std;
@@ -414,6 +415,16 @@ void readrgbdNode::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& cloud_m
   Eigen::Affine3f transform_pc = Eigen::Affine3f::Identity();
   transform_pc.translation() << 0, 0, -table_height;
   pcl::transformPointCloud (*scene_cloud, *scene_cloud, transform_pc);
+
+  //remove NAN
+  /* boost::shared_ptr<std::vector<int>> indices(new std::vector<int>);
+  pcl::removeNaNFromPointCloud(*scene_cloud, *indices);
+  pcl::ExtractIndices<pcl::PointXYZ> extract;
+  extract.setInputCloud(scene_cloud);
+  extract.setIndices(indices);
+  extract.setNegative(true);
+  extract.filter(*scene_cloud); */
+
   pcl::io::savePLYFileBinary(saved_points_dir, *scene_cloud);
   std::cerr << "save: " << saved_points_dir << "\n";
 }

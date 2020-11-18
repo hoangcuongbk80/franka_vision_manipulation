@@ -4,14 +4,14 @@
   
   <param name="depth_topsub" value="/camera/depth/image_raw"/>
   <param name="rgb_topsub" value="/camera/color/image_raw"/>
-  <param name="cloud_topsub" value="/camera/depth/points"/>
+  <param name="cloud_topsub" value="/asus/depth/points"/>
   <param name="cloud_toppub" value="/grasp_detection/depth/mypoints"/>
 
   <param name="saved_rgb_dir" value="$(find grasp_detection)/data/rgb.png"/>
   <param name="saved_depth_dir" value="$(find grasp_detection)/data/depth.png"/>
   <param name="saved_points_dir" value="$(find grasp_detection)/data/points.ply"/>
   
-  <param name="optical_frame_id" value="asus_rgb_optical_frame"/>
+  <param name="optical_frame_id" value="asus_rgb_optical_frame"/> 
   <param name="grasp_frame_id" value="world"/>
   <param name="table_height" value="0.7"/>
   <param name="image_save" value="true"/>

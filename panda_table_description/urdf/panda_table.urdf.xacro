@@ -255,7 +255,7 @@
   <joint name="world_camera_joint" type="fixed">
     <parent link="table" />
     <child link = "camera_link" />
-    <origin xyz="-0.05 -0.40 1.32" rpy="0.0 ${pi/3} ${pi/2}" />
+    <origin xyz="-0.05 -0.60 1.15" rpy="0.0 ${0.255*pi} ${pi/2}" />
   </joint>
 
   <link name="asus_rgb_optical_frame"/>
